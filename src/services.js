@@ -47,14 +47,14 @@ app.post('/intencao-pagamento', async (req, res) => {
   console.log(paymentIntent)
 })
 
-// Definindo a diretiva Content-Security-Policy
-app.use((req, res, next) => {
-  res.setHeader(
-    'Content-Security-Policy',
-    "connect-src 'self' https://api.stripe.com https://errors.stripe.com https://r.stripe.com https://ppm.stripe.com"
-  );
-  next();
-});
+// // Definindo a diretiva Content-Security-Policy
+// app.use((req, res, next) => {
+//   res.setHeader(
+//     'Content-Security-Policy',
+//     "connect-src 'self' https://api.stripe.com https://errors.stripe.com https://r.stripe.com https://ppm.stripe.com"
+//   );
+//   next();
+// });
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public', 'index.html'));
