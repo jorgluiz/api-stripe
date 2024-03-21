@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <!-- Adicione a diretiva Content-Security-Policy -->
+    <!-- <meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://api.stripe.com https://errors.stripe.com https://r.stripe.com https://ppm.stripe.com https://merchant-ui-api.stripe.com"> -->
+</head>
+
+<body>
+    <form id="payment-form">
+        <div class="form-group">
+            <label for="card-number">
+                Número do Cartão de Crédito:
+            </label>
+            <input type="text" id="card-number" placeholder="1234 5678 9012 3456">
+        </div>
+        <div class="form-group">
+            <label for="card-expiry">
+                Data de Validade (MM/YY):
+            </label>
+            <input type="text" id="card-expiry" placeholder="MM/YY">
+        </div>
+        <div class="form-group">
+            <label for="card-cvc">
+                Código CVV:
+            </label>
+            <input type="text" id="card-cvc" placeholder="123">
+        </div>
+        <!-- Adicione o elemento #card-element -->
+        <div id="card-element"></div>
+        <!-- Usado para exibir erros de validação do elemento de cartão -->
+        <div id="card-errors" role="alert"></div>
+        <button id="submit-payment">Pagar</button>
+    </form>
+</body>
+<script>
+    var stripe = Stripe('pk_live_51OnrY6KntidoJfprz9zwIQP9jcsAdlkDiDZ63AZYl0ZZsaJclLhEKrUsEEhTe3lwW6wPXjnhgLvv08NfhlQQyn0I004JymX8BJ');
+    var elements = stripe.elements();
+
+    var cardElement = elements.create('card');
+    cardElement.mount('#card-element');
+
+    var form = document.getElementById('payment-form');
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        // Obter os dados do cartão dos campos de entrada HTML
+        var cardNumber = document.getElementById('card-number').value;
+        var cardExpiry = document.getElementById('card-expiry').value;
+        var cardCvc = document.getElementById('card-cvc').value;
+
+        stripe.createPaymentMethod({
+            type: 'card',
+            card: {
+                number: cardNumber,
+                exp_month: cardExpiry.split('/')[0],
+                exp_year: '20' + cardExpiry.split('/')[1],
+                cvc: cardCvc,
+            }
+        }).then(function (result) {
+            if (result.error) {
+                var errorElement = document.getElementById('card-errors');
+                errorElement.textContent = result.error.message;
+            } else {
+                // Envie o ID do pagamento ao seu servidor para processamento adicional
+                var paymentMethodId = result.paymentMethod.id;
+                fetch('/process_payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ payment_method_id: paymentMethodId })
+                }).then(function (response) {
+                    return response.json();
+                }).then(function (data) {
+                    // Trate a resposta do seu servidor, por exemplo, exiba uma mensagem de sucesso para o usuário
+                    console.log(data);
+                });
+            }
+        });
+    });
+
+</script>
+
+</html>
