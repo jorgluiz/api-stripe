@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+        <!-- Adicione a diretiva Content-Security-Policy -->
+        <meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://api.stripe.com https://errors.stripe.com https://r.stripe.com https://ppm.stripe.com https://merchant-ui-api.stripe.com">
     <script src="https://js.stripe.com/v3/"></script>
-    <!-- Adicione a diretiva Content-Security-Policy -->
-    <meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://api.stripe.com https://errors.stripe.com https://r.stripe.com https://ppm.stripe.com https://merchant-ui-api.stripe.com">
 </head>
 
 <body>
