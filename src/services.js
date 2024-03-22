@@ -8,10 +8,10 @@ const createPaymentIntent = require('./payment-intent/paymentIntents-create')
 app.use(express.json());
 
 // Configuração para servir arquivos estáticos da pasta 'public'
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, 'views', 'public')));
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/views', 'index.html'));
+  res.sendFile(path.join(__dirname, '../views', 'index.html'));
 });
 
 app.post('/pagar', async (req, res) => {
