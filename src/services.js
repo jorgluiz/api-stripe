@@ -2,11 +2,17 @@ const express = require('express');
 const path = require('path')
 const app = express()
 
-const Stripe = require('stripe');
-const stripe = Stripe('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');
+const createPaymentIntent = require('./payment-intent/paymentIntents-create')
 
 
 app.use(express.json());
+
+// Configuração para servir arquivos estáticos da pasta 'public'
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'index.html'));
+});
 
 app.post('/pagar', async (req, res) => {
 
@@ -35,17 +41,7 @@ app.post('/pagar', async (req, res) => {
 })
 
 // seguir fluxo para intenção de pagamento
-app.post('/intencao-pagamento', async (req, res) => {
-
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: 100, // Valor em centavos (ex: $20.00 seria 2000 centavos)
-    currency: 'brl', // Moeda
-    payment_method_types: ['card'], // Métodos de pagamento aceitos
-    description: 'Pedido de exemplo', // Descrição do pagamento
-  });
-
-  console.log(paymentIntent)
-})
+app.post('/intencao-pagamento', createPaymentIntent)
 
 // // Definindo a diretiva Content-Security-Policy
 // app.use((req, res, next) => {
@@ -56,9 +52,6 @@ app.post('/intencao-pagamento', async (req, res) => {
 //   next();
 // });
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public', 'index.html'));
-});
 
 app.post('/process_payment', async (req, res) => {
   const id = req.body
@@ -79,17 +72,45 @@ app.post('/process_payment', async (req, res) => {
 
 app.post('/confirmar-interncao-pagamento', async (req, res) => {
 
-  await stripe.paymentIntents.confirm(
-    'pi_3OwWDCKntidoJfpr121LC9Yk',
-    {
-      payment_method: 'card',
-      return_url: 'https://www.example.com',
-    }
-  ).then(response  => {
-    console.log(response)
-  })
+  // Use o método confirm da API do Stripe para confirmar e pagar a intenção de pagamento
+  stripe.paymentIntents.confirm('pi_3OwWDCKntidoJfpr121LC9Yk', { return_url: 'https://www.google.com.br' })
+    .then(paymentIntent => {
+      // A intenção de pagamento foi confirmada e o pagamento foi processado com sucesso
+      console.log('Pagamento confirmado:', paymentIntent);
+    })
+    .catch(error => {
+      // Ocorreu um erro ao confirmar a intenção de pagamento
+      console.error('Erro ao confirmar pagamento:', error);
+    });
 
 })
+
+
+app.post('/adicionar_cartao', async (req, res) => {
+  const token = req.body.token;
+  console.log(token)
+
+  try {
+      // Crie um método de pagamento usando o token do cartão
+      const paymentMethod = await stripe.paymentMethods.create({
+          type: 'card',
+          card: {
+              token: token,
+          },
+      });
+
+      // Use o ID do método de pagamento para associá-lo à intenção de pagamento
+      const paymentIntentId = 'pi_3OwWDCKntidoJfpr121LC9Yk'; // Substitua pelo ID da intenção de pagamento
+      const updatedPaymentIntent = await stripe.paymentIntents.update(paymentIntentId, {
+          payment_method: paymentMethod.id,
+      });
+
+      res.json({ message: 'Cartão adicionado com sucesso!' });
+  } catch (error) {
+      console.error('Erro ao adicionar cartão:', error);
+      res.status(500).json({ error: 'Erro ao adicionar cartão' });
+  }
+});
 
 
 app.listen(3000, () => {

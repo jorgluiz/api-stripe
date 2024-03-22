@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Card</title>
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+    <form id="payment-form">
+        <div>
+            <label for="card-number">Número do Cartão:</label>
+            <div id="card-number"></div>
+        </div>
+        <div>
+            <label for="card-expiry">Data de Validade:</label>
+            <div id="card-expiry"></div>
+        </div>
+        <div>
+            <label for="card-cvc">Código CVV:</label>
+            <div id="card-cvc"></div>
+        </div>
+        <button id="submit">Adicionar Cartão</button>
+    </form>
+
+    <script>
+        var stripe = Stripe('pk_live_51OnrY6KntidoJfprz9zwIQP9jcsAdlkDiDZ63AZYl0ZZsaJclLhEKrUsEEhTe3lwW6wPXjnhgLvv08NfhlQQyn0I004JymX8BJ');
+        var elements = stripe.elements();
+
+        var cardNumber = elements.create('cardNumber');
+        cardNumber.mount('#card-number');
+
+        var cardExpiry = elements.create('cardExpiry');
+        cardExpiry.mount('#card-expiry');
+
+        var cardCvc = elements.create('cardCvc');
+        cardCvc.mount('#card-cvc');
+
+        var form = document.getElementById('payment-form');
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            // Crie um token do cartão
+            var result = await stripe.createToken(cardNumber);
+            if (result.error) {
+                // Manipule o erro de validação do cartão
+                console.error(result.error.message);
+            } else {
+                // Envie o token do cartão para o servidor
+                var token = result.token.id;
+                fetch('/adicionar_cartao', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ token: token })
+                }).then(function(response) {
+                    return response.json();
+                }).then(function(data) {
+                    // Trate a resposta do servidor, se necessário
+                    console.log(data);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
