@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/views/payment/styles.css">
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- função principal deste código é verificar se usiario está logado -->
+    <script>
+        //##### O PRINCIPAL FOCO DESTA FUNÇÃO É VERIFICAR SE O USUÁRIO ESTÁ LOGADO E COM TOKEN VÁLIDO.
+        // SE O USUÁRIO ESTIVER LOGADO E TENTAR ACESSAR ESTA PÁGINA, PERMANECERÁ,
+        // CASO CONTRÁRIO SERÁ DIRECIONADO PARA PÁGINA LOGIN #####
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // A função checkAccessTokenCookies tem a finalidade de verificar se existe um cookie chamado "accessToken" presente no documento.
+            // Ela percorre todos os cookies presentes na página, os divide e verifica se algum começa com o prefixo "accessToken=".
+            // Se encontrar um cookie com esse nome, extrai o valor do token JWT presente no cookie, remove o prefixo "accessToken=" e decodifica o token utilizando decodeURIComponent.
+            // Em seguida, retorna esse token decodificado.
+            function checkAccessTokenCookies() {
+                // Divide todos os cookies presentes na página
+                const cookies = document.cookie.split(';');
+                // Percorre todos os cookies
+                for (let i = 0; i < cookies.length; i++) {
+                    // Remove espaços em branco do início e do fim de cada cookie
+                    const cookie = cookies[i].trim();
+                    // Verifica se o cookie começa com 'accessToken='
+                    if (cookie.startsWith('accessToken' + '=')) {
+                        // Remove o prefixo "accessToken=" e decodifica o valor do token
+                        const token = cookie.substring('accessToken'.length + 1); // Remove o prefixo "accessToken="
+                        return decodeURIComponent(token);
+                    }
+                }
+                // Se o cookie 'accessToken' não estiver presente, continue mostrando a página de login
+                return null;
+            }
+
+            // Chama a função checkAccessTokenCookies para verificar se o cookie 'accessToken' está presente
+            const token = checkAccessTokenCookies();
+            // Se o token for nulo, redireciona para a página de login
+            if (token === null) {
+                window.location.href = '/login'
+            } else {
+                // Caso contrário, verifica o token com a API
+                axios.post('/verifyToken', {}, {
+                    headers: {
+                        'authorization': `bearer ${token}`, // Adiciona o token ao cabeçalho da requisição
+                        'Content-Type': 'application/json'
+                    }
+                }).then((response) => {
+                    // Seleciona o elemento com a classe 'loading'
+                    const element = document.querySelector('.loading');
+                    // Obtém o estilo computado do elemento
+                    const computedStyle = window.getComputedStyle(element);
+                    // Obtém o valor da propriedade 'display'
+                    const display = computedStyle.getPropertyValue('display');
+                    // Se o display for "none", altera para 'block'
+                    if (display === "none") {
+                        document.querySelector('.loading').style.display = 'block';
+                    }
+                }).catch((error) => {
+                    // Se houver um erro na verificação do token, verifica se o status é 401 e se há um redirecionamento definido
+                    if (error.response && error.response.status === 401 && error.response.data.redirectTo) {
+                        // Redireciona para a URL especificada em 'redirectTo'
+                        window.location.href = error.response.data.redirectTo;
+                    }
+                })
+            }
+        })
+    </script>
+</head>
+
+<body class="loading">
+    <div class="container">
+        <form id="payment-form">
+            <div>
+                <label for="card-number">Número do Cartão:</label>
+                <div contenteditable="true" id="card-number"></div>
+                <div class="invalid-card" hidden></div>
+            </div>
+            <div>
+                <label for="card-expiry">Data de Validade:</label>
+                <div contenteditable="true" id="card-expiry"></div>
+                <div class="invalid_expiry_year_past" hidden></div>
+            </div>
+            <div>
+                <label for="card-cvc">Código CVV:</label>
+                <div contenteditable="true" id="card-cvc"></div>
+                <div class="incomplete_cvc" hidden></div>
+            </div>
+            <button id="submit">Ir para pagamento</button>
+        </form>
+    </div>
+</body>
+<script>
+    // Função para obter um cookie pelo nome
+    function getCookie(name) {
+        // Divide todos os cookies presentes na página
+        const cookies = document.cookie.split(';');
+        // Percorre todos os cookies
+        for (let i = 0; i < cookies.length; i++) {
+            // Remove espaços em branco do início e do fim de cada cookie
+            const cookie = cookies[i].trim();
+            // Verifica se o cookie começa com o nome fornecido
+            if (cookie.startsWith(name + '=')) {
+                // Retorna o valor do cookie sem o nome
+                return cookie.substring(name.length + 1);
+            }
+        }
+        // Retorna uma string vazia se o cookie não for encontrado
+        return '';
+    }
+
+    // Obter o token do cookie 'accessToken'
+    const tokenAuth = getCookie('accessToken');
+
+    // Função para inicializar o Stripe
+    async function initializeStripe() {
+        // Inicializa o Stripe com a chave de teste pública
+        var stripe = Stripe("pk_test_51OnrY6KntidoJfprgftK446xgbUyXEBoPr4ugC65Favhcz4LagKSvUB8I5FB0wAf2sr9LiqcNSmv9Xy5ZbZRcTRZ005W4kdqBI");
+        // Cria os elementos do Stripe
+        var elements = stripe.elements();
+
+        // Cria um campo para o número do cartão
+        var cardNumber = elements.create('cardNumber');
+        // Monta o campo do número do cartão no elemento com id 'card-number'
+        cardNumber.mount('#card-number');
+
+        // Cria um campo para a data de expiração do cartão
+        var cardExpiry = elements.create('cardExpiry');
+        // Monta o campo da data de expiração no elemento com id 'card-expiry'
+        cardExpiry.mount('#card-expiry');
+
+        // Cria um campo para o código CVC do cartão
+        var cardCvc = elements.create('cardCvc');
+        // Monta o campo do código CVC no elemento com id 'card-cvc'
+        cardCvc.mount('#card-cvc');
+
+        // Tratamento de Erros: Adição de tratamento de erros para assegurar que qualquer problema seja capturado e tratado adequadamente.
+        // Adiciona um ouvinte de evento ao campo do número do cartão para capturar alterações
+        cardNumber.addEventListener('change', function (e) {
+            if (e.error && e.error.code === 'invalid_number') {
+                // Exibe a mensagem de erro para número de cartão inválido
+                displayErrorMessage('.invalid-card', 'invalid_number');
+            } else if (e.error && e.error.code === 'incomplete_number') {
+                // Exibe a mensagem de erro para número de cartão incompleto
+                displayErrorMessage('.invalid-card', 'incomplete_number');
+            } else {
+                // Oculta a mensagem de erro
+                hideErrorMessage('.invalid-card');
+            }
+        });
+
+        // Tratamento de Erros: Adição de tratamento de erros para assegurar que qualquer problema seja capturado e tratado adequadamente.
+        // Adiciona um ouvinte de evento ao campo da data de expiração para capturar alterações
+        cardExpiry.addEventListener('change', function (e) {
+            if (e.error && e.error.code === 'invalid_expiry_year_past') {
+                // Exibe a mensagem de erro para data de expiração inválida
+                displayErrorMessage('.invalid_expiry_year_past', 'invalid_expiry_year_past');
+            } else if (e.error && e.error.code === 'incomplete_expiry') {
+                // Exibe a mensagem de erro para data de expiração incompleta
+                displayErrorMessage('.invalid_expiry_year_past', 'incomplete_expiry');
+            } else {
+                // Oculta a mensagem de erro
+                hideErrorMessage('.invalid_expiry_year_past');
+            }
+        });
+
+        // Tratamento de Erros: Adição de tratamento de erros para assegurar que qualquer problema seja capturado e tratado adequadamente.
+        // Adiciona um ouvinte de evento ao campo do código CVC para capturar alterações
+        cardCvc.addEventListener('change', function (e) {
+            if (e.error && e.error.code === 'incomplete_cvc') {
+                // Exibe a mensagem de erro para código CVC incompleto
+                displayErrorMessage('.incomplete_cvc', 'incomplete_cvc');
+            } else {
+                // Oculta a mensagem de erro
+                hideErrorMessage('.incomplete_cvc');
+            }
+        });
+
+        // Seleciona o formulário de pagamento pelo id 'payment-form'
+        var form = document.getElementById('payment-form');
+        // Adiciona um ouvinte de evento para capturar o envio do formulário
+        form.addEventListener('submit', async function (event) {
+            // Previne o comportamento padrão do formulário
+            event.preventDefault();
+
+            // Cria um token do cartão usando o Stripe
+            var result = await stripe.createToken(cardNumber);
+
+            // Envia o token do cartão para o servidor
+            const tokenCard = result.token.id;
+            axios.post('/payment', { tokenCard }, {
+                headers: {
+                    'authorization': `bearer ${tokenAuth}`, // Adiciona o token de autenticação ao cabeçalho da requisição
+                    'Content-Type': 'application/json'
+                }
+            }).then(function () {
+                // Redireciona para a página de confirmação de pagamento
+                window.location.href = '/confirm-payment';
+            }).catch(function (error) {
+                // Trate o erro aqui
+                if (error.response && error.response.status === 401 && error.response.data.redirectTo) {
+                    // Redireciona para a URL especificada em 'redirectTo' em caso de erro de autorização
+                    window.location.href = error.response.data.redirectTo;
+                }
+            });
+        });
+
+        // Função para exibir a mensagem de erro
+        function displayErrorMessage(selector, message) {
+            // Seleciona o elemento pelo seletor fornecido
+            const invalidCard = document.querySelector(selector);
+            // Define o texto da mensagem de erro
+            invalidCard.textContent = message;
+            // Exibe a mensagem de erro
+            invalidCard.style.display = 'block';
+            // Define a cor da mensagem de erro como vermelho
+            invalidCard.style.color = 'red';
+        }
+
+        // Função para ocultar a mensagem de erro
+        function hideErrorMessage(selector) {
+            // Seleciona o elemento pelo seletor fornecido
+            const invalidCard = document.querySelector(selector);
+            // Oculta a mensagem de erro
+            invalidCard.style.display = 'none';
+        }
+    }
+
+    // Chama a função para inicializar o Stripe
+    initializeStripe();
+</script>
+</body>
+
+</html>

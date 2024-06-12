@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<!-- Define o tipo de documento como HTML e o idioma como português do Brasil -->
+<html lang="pt-BR">
+
+<head>
+    <!-- Define a codificação de caracteres e a escala de visualização -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Define o título da página -->
+    <title>Cadastro</title>
+    <!-- Importa o arquivo de estilo CSS -->
+    <link rel="stylesheet" href="/views/createCustomers/styles.css">
+    <!-- Importa a biblioteca Axios para fazer requisições HTTP -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Script para verificar o token de acesso e redirecionar ou exibir o formulário de cadastro -->
+    <script>
+        //##### O PRINCIPAL FOCO DESTA FUNÇÃO É VERIFICAR SE O USUÁRIO ESTÁ LOGADO E COM TOKEN VÁLIDO.
+        // SE O USUÁRIO ESTIVER LOGADO E TENTAR ACESSAR ESTA PÁGINA, ELE NÃO TERÁ ACESSO, PORQUE É PAGINA DE CADASTRO
+        // CASO CONTRÁRIO, ELE IRÁ PERMANECER NA PÁGINA #####
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // A função checkAccessTokenCookies tem a finalidade de verificar se existe um cookie chamado "accessToken" presente no documento. Ela percorre todos os cookies presentes na página, 
+            // os divide e verifica se algum começa com o prefixo "accessToken=". Se encontrar um cookie com esse nome, extrai o valor do token JWT presente no cookie, remove o prefixo "accessToken=" 
+            // e decodifica o token utilizando decodeURIComponent. Em seguida, retorna esse token decodificado.
+            function checkAccessTokenCookies() {
+                // Divide os cookies em um array
+                const cookies = document.cookie.split(';');
+                // Itera sobre os cookies
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim(); // Remove espaços em branco
+                    // Verifica se o cookie começa com 'accessToken='
+                    if (cookie.startsWith('accessToken' + '=')) {
+                        // Remove o prefixo "accessToken="
+                        const token = cookie.substring('accessToken'.length + 1);
+                        // Decodifica e retorna o token
+                        return decodeURIComponent(token);
+                    }
+                }
+                // Se o cookie 'accessToken' não estiver presente, retorna null
+                return null;
+            }
+
+            // Chama a função para verificar o token de acesso nos cookies
+            const token = checkAccessTokenCookies();
+            // Se o token for nulo, exibe a página de cadastro
+            if (token === null) {
+                document.querySelector('.content').style.display = 'block'; // Exibe o conteúdo da página de cadastro
+            } else {
+                // Se o token estiver presente, verifica sua validade
+                axios.post('/verifyToken', {}, {
+                    // Define o cabeçalho de autorização com o token JWT
+                    headers: {
+                        'authorization': `bearer ${token}`,
+                        'Content-Type': 'application/json' // Define o tipo de conteúdo como JSON
+                    }
+                }).then((response) => {
+                    // Se a verificação for bem-sucedida, redireciona para a página inicial
+                    window.location.href = '/home'
+                }).catch(error => {
+                    // Se houver um erro na verificação, exibe o erro no console
+                    console.log(error, 'error')
+                    document.querySelector('.content').style.display = 'block'; // Exibe o conteúdo da página de cadastro
+                })
+            }
+        })
+    </script>
+</head>
+
+<body>
+    <!-- Conteúdo da página de cadastro -->
+    <div class="content">
+        <!-- Formulário de cadastro -->
+        <form id="register-client">
+            <h2>Cadastro</h2>
+            <label for="nome">Nome:</label>
+            <input type="text" id="name" name="name" required>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+            <input type="submit" id="submit" value="Cadastrar">
+            <button class="login" id="login-button">Login</button>
+        </form>
+    </div>
+</body>
+<!-- Script para manipulação do formulário de cadastro e redirecionamento para login -->
+<script>
+    // Seleciona o formulário de cadastro
+    var form = document.getElementById('register-client');
+    // Adiciona um event listener ao formulário para prevenir o comportamento padrão
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        // Obtém o valor dos campos nome e email
+        const name = document.getElementById('name').value;
+        const email = document.getElementById('email').value;
+
+        // Envia uma requisição POST para registrar o cliente
+        axios.post('/register-client', {
+            name,
+            email
+        }).then(function (response) {
+            // Exibe a resposta no console
+            console.log(response);
+            // Redireciona para a página de login após o cadastro
+            window.location.href = '/login';
+        })
+            .catch(function (error) {
+                // Exibe o erro no console
+                console.error(error);
+            });
+    })
+
+    // Adiciona um event listener ao botão de login para prevenir o comportamento padrão
+    document.getElementById('login-button').addEventListener('click', function (event) {
+        event.preventDefault();
+        // Redireciona para a página de login
+        window.location.href = '/login';
+    });
+</script>
+
+</html>

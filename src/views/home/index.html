@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<!-- Define o tipo de documento como HTML e o idioma como inglês -->
+<html lang="en">
+
+<head>
+    <!-- Define a codificação de caracteres e a escala de visualização -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Define o título da página -->
+    <title>Document</title>
+    <!-- Importa o arquivo de estilo CSS -->
+    <link rel="stylesheet" href="/views/home/styles.css">
+    <!-- Importa a biblioteca Axios para fazer requisições HTTP -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- A função principal deste código é verificar se o usuário está logado -->
+    <script>
+        //##### O PRINCIPAL FOCO DESTA FUNÇÃO É VERIFICAR SE O USUÁRIO ESTÁ LOGADO E COM TOKEN VÁLIDO.
+        // SE O USUÁRIO ESTIVER LOGADO E TENTAR ACESSAR ESTA PÁGINA, PERMANECERÁ,
+        // CASO CONTRÁRIO SERÁ DIRECIONADO PARA PÁGINA LOGIN #####
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // A função checkAccessTokenCookies tem a finalidade de verificar se existe um cookie chamado "accessToken"
+            // presente no documento. Ela percorre todos os cookies presentes na página, os divide e verifica se algum
+            // começa com o prefixo "accessToken=". Se encontrar um cookie com esse nome, extrai o valor do token JWT
+            // presente no cookie, remove o prefixo "accessToken=" e decodifica o token utilizando decodeURIComponent.
+            // Em seguida, retorna esse token decodificado.
+            function checkAccessTokenCookies() {
+                const cookies = document.cookie.split(';'); // Divide os cookies em um array
+                for (let i = 0; i < cookies.length; i++) { // Itera sobre os cookies
+                    const cookie = cookies[i].trim(); // Remove espaços em branco
+                    if (cookie.startsWith('accessToken=')) { // Verifica se o cookie começa com 'accessToken='
+                        const token = cookie.substring('accessToken='.length); // Remove o prefixo "accessToken="
+                        return decodeURIComponent(token); // Decodifica e retorna o token
+                    }
+                }
+                // Se o cookie 'accessToken' não estiver presente, retorna null
+                return null;
+            }
+
+            const token = checkAccessTokenCookies(); // Chama a função para verificar o token de acesso nos cookies
+            if (token === null) { // Se o token for nulo
+                window.location.href = '/login'; // Redireciona para a página de login
+            } else {
+                // Realiza uma requisição para verificar se o token é válido
+                axios.post('/verifyToken', {}, {
+                    headers: {
+                        'authorization': `bearer ${token}`, // Define o cabeçalho de autorização com o token JWT
+                        'Content-Type': 'application/json' // Define o tipo de conteúdo como JSON
+                    }
+                }).then((response) => { // Se a requisição for bem-sucedida
+                    // Exibe o elemento de carregamento se estiver oculto
+                    const element = document.querySelector('.loading');
+                    const computedStyle = window.getComputedStyle(element);
+                    const display = computedStyle.getPropertyValue('display');
+                    if (display === "none") {
+                        document.querySelector('.loading').style.display = 'block';
+                    }
+                }).catch((error) => { // Se houver um erro na requisição
+                    // Registra o erro no console
+                    console.log(error.response.data.redirectTo, "error.response.data.redirectTo");
+                    if (error.response && error.response.status === 401 && error.response.data.redirectTo) { // Se o status for 401 e houver uma página de redirecionamento
+                        window.location.href = error.response.data.redirectTo; // Redireciona para a página especificada
+                    }
+                })
+            }
+        });
+    </script>
+</head>
+
+<body class="loading">
+    <!-- Define o corpo do documento com uma classe de carregamento -->
+    <div style="display: flex; height: 100%; flex-direction: column; justify-content: space-between;">
+        <!-- Define o cabeçalho da página -->
+        <header>
+            <!-- Botão de logout -->
+            <button
+                style="display: flex; position: absolute; right: 0; background-color: #0056b3; color: #fff; font-size: 15px;">logout</button>
+        </header>
+        <!-- Define o conteúdo principal da página -->
+        <div class="container">
+            <!-- Título da seção -->
+            <h1>Informações sobre Pagamentos</h1>
+            <!-- Div para informações sobre pagamento -->
+            <div class="information">
+                <!-- Resumo do pagamento -->
+                <p>RESUMO</p>
+                <!-- Valor dos produtos -->
+                <p>Valor de produtos R$ <span class="amount">2500</span></p>
+                <!-- Adicione mais informações conforme necessário -->
+            </div>
+            <!-- Link para a página de pagamentos -->
+            <a href="#" id="payment-link" class="payment-button">Ir para Pagamentos</a>
+        </div>
+    </div>
+</body>
+<!-- Script para logout -->
+<script>
+    const btn = document.querySelector('button'); // Seleciona o botão de logout
+    btn.addEventListener('click', () => {
+        // Define a data de expiração do cookie para uma data passada
+        document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        // Redireciona para a página de login
+        window.location.href = '/login';
+    });
+</script>
+<!-- Script para definir o link de pagamento -->
+<script>
+    // Obtenha o elemento span que contém o valor dinâmico
+    const amountSpan = document.querySelector('.amount');
+    // Obtenha o elemento do link de pagamento
+    const paymentLink = document.getElementById('payment-link');
+
+    // Adicione um ouvinte de evento ao carregar a página
+    window.addEventListener('load', function () {
+        // Obtenha o valor dinâmico do span e adicione-o ao href do link de pagamento
+        const totalValue = amountSpan.textContent;
+        paymentLink.href = `/payment-intent?total=${totalValue}`;
+    });
+</script>
+
+</html>

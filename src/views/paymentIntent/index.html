@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Card</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="/views/paymentIntent/styles.css">
+    <!-- função principal deste código é verificar se usiario está logado -->
+    <script>
+        //##### O PRINCIPAL FOCO DESTA FUNÇÃO É VERIFICAR SE O USUÁRIO ESTÁ LOGADO E COM TOKEN VÁLIDO.
+        // SE O USUÁRIO ESTIVER LOGADO E TENTAR ACESSAR ESTA PÁGINA, PERMANECERÁ,
+        // CASO CONTRÁRIO SERÁ DIRECIONADO PARA PÁGINA LOGIN #####
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // A função checkAccessTokenCookies tem a finalidade de verificar se existe um cookie chamado "accessToken" presente no documento. 
+            // Ela percorre todos os cookies presentes na página, os divide e verifica se algum começa com o prefixo "accessToken=". Se encontrar um cookie com esse nome, extrai o valor do token JWT presente no cookie, remove o prefixo "accessToken=" e decodifica o token utilizando decodeURIComponent. Em seguida, retorna esse token decodificado.
+            function checkAccessTokenCookies() {
+                // Obtém todos os cookies do documento e os divide em um array
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    // Itera sobre cada cookie, removendo espaços em branco extras
+                    const cookie = cookies[i].trim();
+                    // Verifica se o cookie começa com "accessToken="
+                    if (cookie.startsWith('accessToken' + '=')) {
+                        // Remove o prefixo "accessToken=" e decodifica o valor do token
+                        const token = cookie.substring('accessToken'.length + 1);
+                        return decodeURIComponent(token);
+                    }
+                }
+                // Se o cookie "accessToken" não estiver presente, retorna null
+                return null;
+            }
+
+            // Chama a função para verificar o token no cookie
+            const tokenAuth = checkAccessTokenCookies();
+            // Se o token for nulo (usuário não logado), redireciona para a página de login
+            if (token === null) {
+                window.location.href = '/login';
+            } else {
+                // Se o token estiver presente, verifica sua validade no servidor
+                axios.post('/verifyToken', {}, {
+                    headers: {
+                        'authorization': `bearer ${tokenAuth}`,
+                        'Content-Type': 'application/json'
+                    }
+                }).then((response) => {
+                    // Obtém o elemento com a classe "loading"
+                    const element = document.querySelector('.loading');
+                    // Obtém o estilo computado do elemento
+                    const computedStyle = window.getComputedStyle(element);
+                    // Verifica o valor da propriedade "display"
+                    const display = computedStyle.getPropertyValue('display');
+                    // Se o elemento estiver oculto, exibe-o
+                    if (display === "none") {
+                        document.querySelector('.loading').style.display = 'block';
+                    }
+                }).catch((error) => {
+                    // Em caso de erro, verifica o status da resposta e redireciona se necessário
+                    console.log(error.response.data.redirectTo);
+                    if (error.response && error.response.status === 401 && error.response.data.redirectTo) {
+                        window.location.href = error.response.data.redirectTo;
+                    }
+                });
+            }
+        });
+    </script>
+</head>
+
+<body class="loading">
+    <div class="container">
+        <form id="payment-form">
+            <div class="summary">
+                <p>Total R$</p>
+                <div id="amount"></div>
+            </div>
+            <button id="submit">Ir para pagamento</button>
+        </form>
+    </div>
+</body>
+<script>
+    // Função para obter parâmetros de consulta da URL
+    function getParameterByName(name, url) {
+        if (!url) url = window.location.href;
+        // Escapa caracteres especiais no nome do parâmetro
+        name = name.replace(/[\[\]]/g, "\\$&");
+        // Cria uma expressão regular para encontrar o parâmetro na URL
+        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+            results = regex.exec(url);
+        // Se o parâmetro não for encontrado, retorna null
+        if (!results) return null;
+        // Se o parâmetro não tiver valor, retorna string vazia
+        if (!results[2]) return '';
+        // Decodifica e retorna o valor do parâmetro
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+
+    // Obter o valor total da URL
+    var total = getParameterByName('total');
+    const amount = document.getElementById('amount');
+    // Exibe o valor total no elemento "amount"
+    amount.innerText = total;
+</script>
+<script>
+    // Função para obter um cookie pelo nome
+    function getCookie(name) {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Verifica se o cookie começa com o nome especificado
+            if (cookie.startsWith(name + '=')) {
+                // Retorna o valor do cookie sem o nome
+                return cookie.substring(name.length + 1);
+            }
+        }
+        // Retorna string vazia se o cookie não for encontrado
+        return '';
+    }
+
+    // Obter o token do cookie
+    const token = getCookie('accessToken');
+
+    var form = document.getElementById('payment-form');
+    form.addEventListener('submit', async function (event) {
+        // Previne o comportamento padrão do formulário (recarregar a página)
+        event.preventDefault();
+
+        // Obtém o valor total do pagamento
+        const amount = document.getElementById('amount').innerText;
+
+        // Envia uma requisição POST para criar a intenção de pagamento
+        axios.post('payment-intent', {
+            amount: amount,
+        }, {
+            headers: {
+                'authorization': `bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        }).then(function (response) {
+            // Redireciona para a página de pagamento se a requisição for bem-sucedida
+            window.location.href = '/payment';
+        }).catch(function (error) {
+            // Trate o erro aqui
+            // Se a resposta indicar que o usuário não está autorizado, redireciona para a página de login
+            if (error.response && error.response.status === 401 && error.response.data.redirectTo) {
+                window.location.href = error.response.data.redirectTo;
+            } else {
+                // Caso contrário, exibe o erro no console
+                console.error(error);
+            }
+        });
+    });
+</script>
+
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/views/pagamentoRealizadoComSucesso/styles.css">
+    <title>Document</title>
+</head>
+
+<body>
+    <div class="overlay">
+        <div class="background">
+            <div class="paymentMadeSuccessfully">
+                <div>
+                    <p>Confirmado</p>
+                    <p>O pagamento foi realizado com sucesso</p>
+                </div>
+                <div class="cross">
+                    <div class="x1"></div>
+                    <div class="x2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="content">
+        <a class="home-link" href="/home">voltar para HOME</a>
+    </div>
+</body>
+<script>
+    const cross = document.querySelector('.cross')
+    const paymentMadeSuccessfully = document.querySelector('.paymentMadeSuccessfully')
+    const background = document.querySelector('.background')
+    const overlay = document.querySelector('.overlay');
+
+    // Função para esconder a div de confirmação e remover o fundo
+    const hidePaymentMessage = () => {
+        paymentMadeSuccessfully.style.display = 'none';
+        background.style.background = 'none';
+        overlay.style.display = 'none'; // Oculta o overlay
+    };
+
+    // Evento de clique no "X" para esconder a mensagem de pagamento
+    cross.addEventListener('click', hidePaymentMessage);
+
+    // Evento de clique no fundo para esconder a mensagem de pagamento
+    background.addEventListener('click', (event) => {
+        // Verifica se o clique foi fora da div paymentMadeSuccessfully
+        if (!paymentMadeSuccessfully.contains(event.target)) {
+            hidePaymentMessage();
+        }
+    });
+</script>
+
+</html>

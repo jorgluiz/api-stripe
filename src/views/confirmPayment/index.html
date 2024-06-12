@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/views/home/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- função principal deste código é verificar se usiario está logado -->
+    <script>
+        //##### O PRINCIPAL FOCO DESTA FUNÇÃO É VERIFICAR SE O USUÁRIO ESTÁ LOGADO E COM TOKEN VÁLIDO.
+        // SE O USUÁRIO ESTIVER LOGADO E TENTAR ACESSAR ESTA PÁGINA, PERMANECERÁ,
+        // CASO CONTRÁRIO SERÁ DIRECIONADO PARA PÁGINA LOGIN #####
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // A função checkAccessTokenCookies tem a finalidade de verificar se existe um cookie chamado "accessToken" presente no documento. Ela percorre todos os cookies presentes na página, os divide e verifica se algum começa com o prefixo "accessToken=". Se encontrar um cookie com esse nome, extrai o valor do token JWT presente no cookie, remove o prefixo "accessToken=" e decodifica o token utilizando decodeURIComponent. Em seguida, retorna esse token decodificado.
+
+            function checkAccessTokenCookies() {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith('accessToken' + '=')) {
+                        const token = cookie.substring('accessToken'.length + 1); // Remove o prefixo "accessToken="
+                        return decodeURIComponent(token);
+                        // document.querySelector('body').style.display = 'block';
+                        // Se o cookie 'accessToken' estiver presente, redirecione para a página '/home'
+                    }
+                }
+                // Se o cookie 'accessToken' não estiver presente, continue mostrando a página de login
+                return null;
+            }
+
+
+            const token = checkAccessTokenCookies();
+            if (token === null) {
+                window.location.href = '/login'
+                // document.querySelector('.loading').style.display = 'block';
+            } else {
+                // console.log(token)
+                // window.location.href = '/home';
+                axios.post('/verifyToken', {}, {
+                    headers: {
+                        'authorization': `bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }).then((response) => {
+                    const element = document.querySelector('.loading');
+                    const computedStyle = window.getComputedStyle(element);
+                    const display = computedStyle.getPropertyValue('display');
+                    if (display === "none") {
+                        document.querySelector('.loading').style.display = 'block';
+                    }
+                }).catch((error) => {
+                    if (error.response && error.response.status === 401 && error.response.data.redirectTo) {
+                        window.location.href = error.response.data.redirectTo;
+                    }
+                })
+            }
+        })
+    </script>
+    <script>
+        // function deleteCookie(token) {
+        //     document.cookie = token + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/confirm-payment;';
+        // }
+        window.onload = function () {
+            // Exibe os cookies
+            var cookies = document.cookie.split(';')
+            // deleteCookie(cookies);
+
+            // Verifica se o cookie 'token' está presente
+            var tokenCookie = cookies.find(function (cookie) {
+                return cookie.trim().startsWith('token-payment=')
+            });
+
+            if (tokenCookie) {
+                // Extrai o valor do cookie 'token'
+                var tokenValue = tokenCookie.split('=')[1]
+            } else {
+                // window.location.href = '/payment';
+            }
+        };
+    </script>
+</head>
+
+<body class="loading">
+    <div class="container">
+        <div class="product-overview">
+
+        </div>
+        <form id="payment-form">
+            <div class="product-information">
+                <h1>INFORMAÇÕES DO PEDIDO</h1>
+            </div>
+            <div class="summary">
+                <H1>RESUMO</H1>
+                <div>
+                    <p>valor do produtos</p>
+                    <p>100000</p>
+                </div>
+                <div class="form-of-payment">
+                    <p>forma de pagamento</p>
+                    <p>cartão</p>
+                    <p>100000</p>
+                </div>
+            </div>
+            <button id="submit">FINALIZAR</button>
+        </form>
+    </div>
+</body>
+<script>
+    // Função para obter um cookie pelo nome
+    function getCookie(name) {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.startsWith(name + '=')) {
+                return cookie.substring(name.length + 1);
+            }
+        }
+        return '';
+    }
+
+    // Obter o token do cookie
+    const token = getCookie('accessToken');
+
+    var form = document.getElementById('payment-form')
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        axios.post('/confirm-payment', {}, {
+            headers: {
+                'authorization': `bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(function () {
+                window.location.href = '/pagamento-realizado-com-sucesso';
+            })
+            .catch(function (error) {
+                // Trate o erro aqui
+                if (error.response && error.response.status === 401 && error.response.data.redirectTo) {
+                    window.location.href = error.response.data.redirectTo;
+                }
+            });
+    })
+</script>
+
+</html>
