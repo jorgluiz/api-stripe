@@ -73,6 +73,8 @@
 </head>
 
 <body class="loading">
+    <input id="stripe-public-key" value="{{KEY_PUBLIC}}" type="hidden" />
+
     <div class="container">
         <form id="payment-form">
             <div>
@@ -119,7 +121,7 @@
     // Função para inicializar o Stripe
     async function initializeStripe() {
         // Inicializa o Stripe com a chave de teste pública
-        var stripe = Stripe("pk_test_51OnrY6KntidoJfprgftK446xgbUyXEBoPr4ugC65Favhcz4LagKSvUB8I5FB0wAf2sr9LiqcNSmv9Xy5ZbZRcTRZ005W4kdqBI");
+        var stripe = Stripe(tokenAuth);
         // Cria os elementos do Stripe
         var elements = stripe.elements();
 
