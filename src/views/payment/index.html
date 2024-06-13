@@ -73,8 +73,6 @@
 </head>
 
 <body class="loading">
-    <input id="stripe-public-key" value="{{KEY_PUBLIC}}" type="hidden" />
-
     <div class="container">
         <form id="payment-form">
             <div>
@@ -116,7 +114,7 @@
     }
 
     // Obter o token do cookie 'accessToken'
-    const tokenAuth = getCookie('accessToken');
+    const tokenAuth = getCookie('pk_live_51OnrY6KntidoJfprz9zwIQP9jcsAdlkDiDZ63AZYl0ZZsaJclLhEKrUsEEhTe3lwW6wPXjnhgLvv08NfhlQQyn0I004JymX8BJ');
 
     // Função para inicializar o Stripe
     async function initializeStripe() {
@@ -191,6 +189,7 @@
 
             // Cria um token do cartão usando o Stripe
             var result = await stripe.createToken(cardNumber);
+            console.log(result)
 
             // Envia o token do cartão para o servidor
             const tokenCard = result.token.id;

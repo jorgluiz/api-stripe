@@ -4,6 +4,7 @@ const path = require('path')
 const cookie = require('cookie')
 const cookieParser = require('cookie-parser'); // Importe o pacote cookie-parser
 const open = require('open');
+const cors = require('cors'); // Importe o pacote cors
 const firebaseFunctions = require('./configdb')
 
 // // Chamar a função para salvar dados no Realtime Database
@@ -21,7 +22,15 @@ const { authenticated } = require('./authenticateUser')
 const { verifyToken } = require('./checkerToken')
 const { checkTokenExpirationMiddleware } = require('./checkTokenExpiration ')
 
+// Configuração do CORS
+const corsOptions = {
+  origin: 'https://js.stripe.com', // Permitir apenas requisições do domínio do Stripe
+  methods: 'GET,POST',
+  credentials: true // Habilitar credenciais para cookies e autenticação
+};
+
 // Configuração dos middlewares globais
+app.use(cors(corsOptions)); // Adicione o cors como middleware global
 app.use(express.json()); // Middleware para análise de solicitações JSON
 app.use(express.urlencoded({ extended: true })); // Middleware para análise de solicitações codificadas de formulário
 app.use(cookieParser()); // Middleware para análise de cookies
