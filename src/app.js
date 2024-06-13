@@ -4,6 +4,7 @@ const path = require('path')
 const cookie = require('cookie')
 const cookieParser = require('cookie-parser'); // Importe o pacote cookie-parser
 const firebaseFunctions = require('./configdb')
+const open = require('open'); // Corrija a importação do módulo open
 
 // // Chamar a função para salvar dados no Realtime Database
 // firebaseFunctions.salvarDadosNoDatabase(dados);
@@ -119,4 +120,11 @@ app.post('/pagar', async (req, res) => {
     })
 })
 
-module.exports = app
+// module.exports = app
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`The server is now running on port ${PORT}`);
+  if (process.env.NODE_ENV !== 'production') {
+    open(`http://localhost:${PORT}`);
+  }
+});
