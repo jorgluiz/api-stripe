@@ -3,12 +3,12 @@ const app = express()
 const path = require('path')
 const cookie = require('cookie')
 const cookieParser = require('cookie-parser'); // Importe o pacote cookie-parser
+const open = require('open');
 const firebaseFunctions = require('./configdb')
 
 // // Chamar a função para salvar dados no Realtime Database
 // firebaseFunctions.salvarDadosNoDatabase(dados);
 // firebaseFunctions.obterDados()
-
 
 // Importação das funções dos outros módulos
 const { createCustomer } = require('./createCustomers')
@@ -20,11 +20,6 @@ const { confirmPayment } = require('./confirmPayment')
 const { authenticated } = require('./authenticateUser')
 const { verifyToken } = require('./checkerToken')
 const { checkTokenExpirationMiddleware } = require('./checkTokenExpiration ')
-
-// O código define o motor de visualização como HTML
-app.set("view engine", "html");
-app.engine("html", require("hbs").__express);
-app.set("views", path.join(__dirname, "src/views"));
 
 // Configuração dos middlewares globais
 app.use(express.json()); // Middleware para análise de solicitações JSON
@@ -63,10 +58,6 @@ app.get('/home', (req, res) => {
 
 app.get('/payment-intent', (req, res) => {
   res.sendFile(path.join(__dirname, 'views/paymentIntent', 'index.html'));
-});
-
-app.get("/payment", function (req, res) {
-  res.status(200).render("./payment", {oi: 'oi' });
 });
 
 app.get('/payment', (req, res) => {
@@ -129,4 +120,10 @@ app.post('/pagar', async (req, res) => {
     })
 })
 
-module.exports = app
+// module.exports = app
+// Start the server
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`The server is now running on port ${PORT}`);
+  open(`http://localhost:${PORT}`);
+})
