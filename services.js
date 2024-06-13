@@ -1,5 +1,5 @@
 const app = require('./src/app')
-
+const open = require('open');
 require('dotenv').config()
 
 // Start the server

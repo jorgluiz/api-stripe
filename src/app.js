@@ -37,6 +37,12 @@ app.use(express.static(path.join(__dirname, '../src')));
 
 // Definição das rotas para servir arquivos HTML das páginas
 
+// Redireciona a rota raiz (/) para /login
+app.get("/", (req, res) => {
+  res.redirect("/login");
+});
+
+
 app.get('/create-customers', (req, res) => {
   res.sendFile(path.join(__dirname, 'views/createCustomers', 'index.html'));
 });
