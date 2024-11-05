@@ -114,12 +114,12 @@
     }
 
     // Obter o token do cookie 'accessToken'
-    const tokenAuth = getCookie('pk_live_51OnrY6KntidoJfprz9zwIQP9jcsAdlkDiDZ63AZYl0ZZsaJclLhEKrUsEEhTe3lwW6wPXjnhgLvv08NfhlQQyn0I004JymX8BJ');
+    const tokenAuth = getCookie('accessToken');
 
     // Função para inicializar o Stripe
     async function initializeStripe() {
         // Inicializa o Stripe com a chave de teste pública
-        var stripe = Stripe(tokenAuth);
+        var stripe = Stripe('pk_live_51OnrY6KntidoJfprz9zwIQP9jcsAdlkDiDZ63AZYl0ZZsaJclLhEKrUsEEhTe3lwW6wPXjnhgLvv08NfhlQQyn0I004JymX8BJ');
         // Cria os elementos do Stripe
         var elements = stripe.elements();
 
@@ -198,10 +198,12 @@
                     'authorization': `bearer ${tokenAuth}`, // Adiciona o token de autenticação ao cabeçalho da requisição
                     'Content-Type': 'application/json'
                 }
-            }).then(function () {
+            }).then(function (result) {
+                console.log(result)
                 // Redireciona para a página de confirmação de pagamento
                 window.location.href = '/confirm-payment';
             }).catch(function (error) {
+                console.log(error)
                 // Trate o erro aqui
                 if (error.response && error.response.status === 401 && error.response.data.redirectTo) {
                     // Redireciona para a URL especificada em 'redirectTo' em caso de erro de autorização

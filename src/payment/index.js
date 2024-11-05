@@ -6,6 +6,7 @@ const stripe = Stripe(keyAPI); // Inicializa o Stripe com a chave da API
 
 const paymentCreateToken = async (req, res) => { // Define a função assíncrona paymentCreateToken
     const { tokenCard } = req.body // Extrai o token do cartão que foi registrado e assim criar unm metodo de pagamento com token
+    console.log(tokenCard, "passou por aqui ???")
 
     // esse cookie é criado para ter expiração do token de pagamento
     const cookies = cookie.serialize('token-payment', tokenCard, { // Serializa o cookie com o nome 'token-payment' e o token
