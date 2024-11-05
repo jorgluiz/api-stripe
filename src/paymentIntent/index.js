@@ -12,7 +12,6 @@ async function createPaymentIntent(req, res) {
     const { amount } = req.body;
 
     let convertedvalue = parseFloat(amount.replace(",", ""));
-    console.log(convertedvalue)
 
     // Verifica se o valor é válido
     if (!convertedvalue || convertedvalue <= 0) {

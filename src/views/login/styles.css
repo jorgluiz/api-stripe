@@ -12,6 +12,13 @@ body {
 display: none;
 }
 
+.center-image {
+  display: block;
+  margin: 30px auto;
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+}
+
 form {
     background-color: #fff;
     padding: 20px;
